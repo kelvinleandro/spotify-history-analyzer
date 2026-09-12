@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Spotify Streaming History Analyzer</title>
+  <meta name="description"
+    content="Analyze your Spotify streaming history directly in your browser from your data export ZIP file." />
+
+  <!-- Google Fonts: Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+
+  <!-- JSZip library for browser-side ZIP extraction -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+
+  <link rel="stylesheet" href="style.css" />
+</head>
+
+<body>
+  <div class="app-container">
+    <!-- Header -->
+    <header class="header">
+      <div class="brand">
+        <img src="Spotify_Primary_Logo_RGB_Green.png" alt="Spotify Logo" class="spotify-logo">
+        <div>
+          <h1>Spotify Streaming History Analyzer</h1>
+          <p class="subtitle">Client-side analysis of your Spotify listening data (zero server uploads)</p>
+        </div>
+      </div>
+    </header>
+
+    <!-- Upload Zone -->
+    <section class="upload-section">
+      <div class="dropzone" id="dropzone">
+        <input type="file" id="fileInput" accept=".zip" />
+        <div class="dropzone-content">
+          <svg class="upload-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+            <polyline points="17 8 12 3 7 8"></polyline>
+            <line x1="12" y1="3" x2="12" y2="15"></line>
+          </svg>
+          <h3>Drop your Spotify Data ZIP file here</h3>
+          <p>or <span class="browse-btn">Browse files</span> from your computer</p>
+          <span class="file-hint">Accepts your Spotify Account Data (.zip)</span>
+        </div>
+      </div>
+      <div id="loadingStatus" class="loading-status hidden">
+        <div class="spinner"></div>
+        <span id="loadingMessage">Extracting and analyzing streaming records...</span>
+      </div>
+    </section>
+
+    <!-- Dashboard Content (hidden until file loaded) -->
+    <main id="dashboard" class="dashboard hidden">
+      <!-- Active Period Banner & Controls Bar -->
+      <div class="controls-bar">
+        <div class="date-banner" id="dateBanner">
+          <span class="banner-icon">📅</span>
+          <span>Active Period: <strong id="dateRangeText">—</strong></span>
+        </div>
+
+        <div class="filter-controls">
+          <!-- Toggle current year -->
+          <label class="toggle-container" title="Filter to only include streams from the current year">
+            <input type="checkbox" id="currentYearToggle" checked />
+            <span class="toggle-slider"></span>
+            <span class="toggle-label" id="currentYearLabel">Only Current Year (2026)</span>
+          </label>
+
+          <!-- Sorting criteria -->
+          <div class="sort-selector">
+            <span class="sort-label">Sort by:</span>
+            <button class="pill-btn active" id="sortByPlaysBtn" data-sort="plays">Plays</button>
+            <button class="pill-btn" id="sortByDurationBtn" data-sort="duration">Duration</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Metrics Cards -->
+      <section class="metrics-grid">
+        <div class="metric-card">
+          <div class="metric-icon">🎵</div>
+          <div class="metric-info">
+            <span class="metric-label">Unique Tracks</span>
+            <span class="metric-value" id="valTracks">0</span>
+          </div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-icon">🎤</div>
+          <div class="metric-info">
+            <span class="metric-label">Unique Artists</span>
+            <span class="metric-value" id="valArtists">0</span>
+          </div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-icon">⏱️</div>
+          <div class="metric-info">
+            <span class="metric-label">Total Hours Listened</span>
+            <span class="metric-value" id="valHours">0 hrs</span>
+          </div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-icon">▶️</div>
+          <div class="metric-info">
+            <span class="metric-label">Total Plays</span>
+            <span class="metric-value" id="valPlays">0</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- Tables Section (Split screen 2 columns) -->
+      <section class="rankings-grid">
+        <!-- Top Artists -->
+        <div class="ranking-panel">
+          <div class="panel-header">
+            <h2>🎤 Top 50 Artists</h2>
+            <span class="panel-tag" id="artistsSortTag">Sorted by Plays</span>
+          </div>
+          <div class="table-container">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th class="col-rank">#</th>
+                  <th class="col-name">Artist</th>
+                  <th class="col-plays">Plays</th>
+                  <th class="col-duration">Duration</th>
+                </tr>
+              </thead>
+              <tbody id="artistsTableBody">
+                <!-- Rows injected via JS -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Top Tracks -->
+        <div class="ranking-panel">
+          <div class="panel-header">
+            <h2>🎶 Top 50 Tracks</h2>
+            <span class="panel-tag" id="tracksSortTag">Sorted by Plays</span>
+          </div>
+          <div class="table-container">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th class="col-rank">#</th>
+                  <th class="col-name">Track</th>
+                  <th class="col-plays">Plays</th>
+                  <th class="col-duration">Duration</th>
+                </tr>
+              </thead>
+              <tbody id="tracksTableBody">
+                <!-- Rows injected via JS -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- Footer Notice -->
+      <footer class="footer-notice">
+        <span class="notice-icon">⚠️</span>
+        <div>
+          <strong>Playback Rule:</strong> Only streams with playback duration greater than or equal to
+          <strong>30 seconds (≥ 30,000 ms)</strong> are counted as valid plays, matching standard music streaming
+          metrics.
+        </div>
+      </footer>
+    </main>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+
+</html>
