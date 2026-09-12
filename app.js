@@ -211,7 +211,9 @@ function render() {
   // Update Active Date Range Banner
   if (oldestDate && newestDate) {
     const periodType = onlyCurrentYear ? `Current Year (${currentYear})` : 'All Time';
-    dateRangeText.innerHTML = `${oldestDate} &nbsp;→&nbsp; ${newestDate} (${periodType})`;
+    const startDate = oldestDate.split(/[\sT]/)[0];
+    const endDate = newestDate.split(/[\sT]/)[0];
+    dateRangeText.innerHTML = `${startDate} &nbsp;→&nbsp; ${endDate} (${periodType})`;
   } else {
     dateRangeText.textContent = '—';
   }
