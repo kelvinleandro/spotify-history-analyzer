@@ -211,52 +211,73 @@ body {
   gap: 20px;
 }
 
-/* Toggle Switch */
-.toggle-container {
+/* Year Selector */
+.year-selector {
   display: flex;
   align-items: center;
-  gap: 10px;
-  cursor: pointer;
-  user-select: none;
+  gap: 8px;
 }
 
-.toggle-container input {
-  display: none;
+.year-label {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-weight: 600;
 }
 
-.toggle-slider {
-  width: 44px;
-  height: 24px;
-  background-color: var(--border-color);
-  border-radius: 20px;
+.select-wrapper {
   position: relative;
-  transition: background-color 0.25s ease;
+  display: inline-flex;
+  align-items: center;
 }
 
-.toggle-slider::after {
+.custom-select {
+  appearance: none;
+  -webkit-appearance: none;
+  background-color: var(--bg-elevated);
+  border: 1px solid var(--border-color);
+  color: var(--text-primary);
+  padding: 6px 36px 6px 14px;
+  border-radius: 20px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  outline: none;
+  transition: all 0.2s ease;
+}
+
+.custom-select:hover {
+  border-color: var(--text-secondary);
+  background-color: #333;
+}
+
+.custom-select:focus {
+  border-color: var(--accent-green);
+  box-shadow: 0 0 0 2px rgba(29, 185, 84, 0.25);
+}
+
+.custom-select option {
+  background-color: var(--bg-elevated);
+  color: var(--text-primary);
+}
+
+.select-wrapper::after {
   content: '';
   position: absolute;
-  top: 3px;
-  left: 3px;
-  width: 18px;
-  height: 18px;
-  background-color: #fff;
-  border-radius: 50%;
-  transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  right: 14px;
+  pointer-events: none;
+  width: 6px;
+  height: 6px;
+  border-right: 2px solid var(--text-secondary);
+  border-bottom: 2px solid var(--text-secondary);
+  transform: translateY(-2px) rotate(45deg);
+  transition: border-color 0.2s;
 }
 
-.toggle-container input:checked+.toggle-slider {
-  background-color: var(--accent-green);
-}
-
-.toggle-container input:checked+.toggle-slider::after {
-  transform: translateX(20px);
-}
-
-.toggle-label {
-  font-size: 0.9rem;
-  font-weight: 500;
-  color: var(--text-secondary);
+.select-wrapper:hover::after {
+  border-color: var(--text-primary);
 }
 
 /* Sort Selector */

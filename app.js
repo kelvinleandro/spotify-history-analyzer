@@ -1,7 +1,6 @@
 // Spotify Streaming History Analyzer - JavaScript Logic
 
 let rawRecords = [];
-let currentYear = new Date().getFullYear();
 let activeSort = 'plays'; // 'plays' or 'duration'
 
 // DOM Elements
@@ -11,8 +10,7 @@ const loadingStatus = document.getElementById('loadingStatus');
 const loadingMessage = document.getElementById('loadingMessage');
 const dashboard = document.getElementById('dashboard');
 
-const currentYearToggle = document.getElementById('currentYearToggle');
-const currentYearLabel = document.getElementById('currentYearLabel');
+const yearSelect = document.getElementById('yearSelect');
 const dateRangeText = document.getElementById('dateRangeText');
 
 const sortByPlaysBtn = document.getElementById('sortByPlaysBtn');
@@ -27,9 +25,6 @@ const valPlays = document.getElementById('valPlays');
 
 const artistsTableBody = document.getElementById('artistsTableBody');
 const tracksTableBody = document.getElementById('tracksTableBody');
-
-// Set current year label dynamically
-currentYearLabel.textContent = `Only Current Year (${currentYear})`;
 
 // Duration Formatter
 function formatDuration(ms) {
@@ -88,20 +83,32 @@ async function handleFile(file) {
     rawRecords = [];
     const jsonFilePromises = [];
 
-    // Find all files matching StreamingHistory_music*.json
+    // Find all files matching standard or extended Spotify streaming history
     zip.forEach((relativePath, zipEntry) => {
       const filename = relativePath.split('/').pop();
-      if (
-        filename.startsWith('StreamingHistory_music') &&
+      const isHistoryFile =
+        (
+          (filename.startsWith('StreamingHistory') && !filename.includes('podcast')) ||
+          filename.startsWith('Streaming_History_Audio') ||
+          filename.startsWith('endsong_')
+        ) &&
         filename.endsWith('.json') &&
-        !zipEntry.dir
-      ) {
+        !zipEntry.dir;
+
+      if (isHistoryFile) {
         jsonFilePromises.push(
           zipEntry.async('string').then((jsonText) => {
             try {
               const list = JSON.parse(jsonText);
               if (Array.isArray(list)) {
-                rawRecords.push(...list);
+                for (const item of list) {
+                  rawRecords.push({
+                    endTime: item.endTime || item.ts,
+                    artistName: item.artistName || item.master_metadata_album_artist_name,
+                    trackName: item.trackName || item.master_metadata_track_name,
+                    msPlayed: item.msPlayed != null ? item.msPlayed : item.ms_played,
+                  });
+                }
               }
             } catch (err) {
               console.warn(`Failed to parse ${relativePath}:`, err);
@@ -113,12 +120,14 @@ async function handleFile(file) {
 
     if (jsonFilePromises.length === 0) {
       showLoading(false);
-      alert("No 'StreamingHistory_music*.json' files found inside the uploaded ZIP!");
+      alert("No Spotify streaming history JSON files found inside the uploaded ZIP!");
       return;
     }
 
     showLoading(true, `Extracting ${jsonFilePromises.length} streaming history files...`);
     await Promise.all(jsonFilePromises);
+
+    populateYearSelect();
 
     showLoading(false);
     dashboard.classList.remove('hidden');
@@ -139,18 +148,49 @@ function showLoading(show, message = '') {
   }
 }
 
+// Populate available years dynamically in the select dropdown
+function populateYearSelect() {
+  const yearsSet = new Set();
+
+  for (const item of rawRecords) {
+    if (!item.artistName || !item.trackName) continue;
+    if (item.msPlayed < 30000) continue;
+    const dateStr = item.endTime;
+    if (dateStr && dateStr.length >= 4) {
+      const yr = dateStr.slice(0, 4);
+      if (/^\d{4}$/.test(yr)) {
+        yearsSet.add(yr);
+      }
+    }
+  }
+
+  const sortedYears = Array.from(yearsSet).sort((a, b) => b.localeCompare(a));
+  const previousValue = yearSelect.value;
+
+  yearSelect.innerHTML =
+    '<option value="all">All Time</option>' +
+    sortedYears.map((y) => `<option value="${y}">${y}</option>`).join('');
+
+  if (previousValue && (previousValue === 'all' || sortedYears.includes(previousValue))) {
+    yearSelect.value = previousValue;
+  } else {
+    yearSelect.value = 'all';
+  }
+}
+
 // Compute & Render Dashboard
 function render() {
-  const onlyCurrentYear = currentYearToggle.checked;
-  const currentYearStr = String(currentYear);
+  const selectedYear = yearSelect ? yearSelect.value : 'all';
 
   // Filter records
   // Must have artist, track, msPlayed >= 30,000 (30 seconds)
   const filtered = rawRecords.filter((item) => {
     if (!item.artistName || !item.trackName) return false;
     if (item.msPlayed < 30000) return false;
-    if (onlyCurrentYear && item.endTime && !item.endTime.startsWith(currentYearStr)) {
-      return false;
+    if (selectedYear !== 'all') {
+      if (!item.endTime || !item.endTime.startsWith(selectedYear)) {
+        return false;
+      }
     }
     return true;
   });
@@ -210,7 +250,7 @@ function render() {
 
   // Update Active Date Range Banner
   if (oldestDate && newestDate) {
-    const periodType = onlyCurrentYear ? `Current Year (${currentYear})` : 'All Time';
+    const periodType = selectedYear !== 'all' ? `Year ${selectedYear}` : 'All Time';
     const startDate = oldestDate.split(/[\sT]/)[0];
     const endDate = newestDate.split(/[\sT]/)[0];
     dateRangeText.innerHTML = `${startDate} &nbsp;→&nbsp; ${endDate} (${periodType})`;
@@ -288,7 +328,7 @@ function escapeHtml(str) {
 }
 
 // Event Listeners for Controls
-currentYearToggle.addEventListener('change', () => {
+yearSelect.addEventListener('change', () => {
   render();
 });
 

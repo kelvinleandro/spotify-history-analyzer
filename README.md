@@ -10,7 +10,7 @@ Built with pure **HTML5**, **CSS3**, and **Vanilla JavaScript** — runs 100% lo
 
 - **Client-Side ZIP Parsing**: Direct upload and client-side decompression of your `.zip` archive via [JSZip](https://stuk.github.io/jszip/). Your data never leaves your computer.
 - **Date Range Overview**: Automatically detects and displays the earliest and latest streaming dates for the active analysis window.
-- **Current Year Toggle**: Easily toggle between filtering for the current year or analyzing your entire lifetime history.
+- **Year Filter Selector**: Select any available year detected in your streaming history, or choose "All Time" to analyze your complete history.
 - **Instant Metrics Cards**:
   - 🎶 **Unique Tracks**: Total number of distinct tracks listened to.
   - 🎤 **Unique Artists**: Total number of distinct artists discovered.

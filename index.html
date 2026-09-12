@@ -64,12 +64,15 @@
         </div>
 
         <div class="filter-controls">
-          <!-- Toggle current year -->
-          <label class="toggle-container" title="Filter to only include streams from the current year">
-            <input type="checkbox" id="currentYearToggle" checked />
-            <span class="toggle-slider"></span>
-            <span class="toggle-label" id="currentYearLabel">Only Current Year (2026)</span>
-          </label>
+          <!-- Year filter selector -->
+          <div class="year-selector">
+            <label for="yearSelect" class="year-label">Year:</label>
+            <div class="select-wrapper">
+              <select id="yearSelect" class="custom-select" title="Filter streams by year or view all time">
+                <option value="all">All Time</option>
+              </select>
+            </div>
+          </div>
 
           <!-- Sorting criteria -->
           <div class="sort-selector">
