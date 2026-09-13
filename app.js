@@ -9,6 +9,7 @@ const dropzone = document.getElementById('dropzone');
 const loadingStatus = document.getElementById('loadingStatus');
 const loadingMessage = document.getElementById('loadingMessage');
 const dashboard = document.getElementById('dashboard');
+const instructionsSection = document.getElementById('instructionsSection');
 
 const yearSelect = document.getElementById('yearSelect');
 const dateRangeText = document.getElementById('dateRangeText');
@@ -130,6 +131,9 @@ async function handleFile(file) {
     populateYearSelect();
 
     showLoading(false);
+    if (instructionsSection) {
+      instructionsSection.classList.add('hidden');
+    }
     dashboard.classList.remove('hidden');
     render();
   } catch (err) {
