@@ -18,6 +18,7 @@ const sortByPlaysBtn = document.getElementById('sortByPlaysBtn');
 const sortByDurationBtn = document.getElementById('sortByDurationBtn');
 const artistsSortTag = document.getElementById('artistsSortTag');
 const tracksSortTag = document.getElementById('tracksSortTag');
+const albumsSortTag = document.getElementById('albumsSortTag');
 
 const valTracks = document.getElementById('valTracks');
 const valArtists = document.getElementById('valArtists');
@@ -26,6 +27,8 @@ const valPlays = document.getElementById('valPlays');
 
 const artistsTableBody = document.getElementById('artistsTableBody');
 const tracksTableBody = document.getElementById('tracksTableBody');
+const albumsPanel = document.getElementById('albumsPanel');
+const albumsTableBody = document.getElementById('albumsTableBody');
 
 // Duration Formatter
 function formatDuration(ms) {
@@ -103,10 +106,12 @@ async function handleFile(file) {
               const list = JSON.parse(jsonText);
               if (Array.isArray(list)) {
                 for (const item of list) {
+                  const album = item.albumName || item.master_metadata_album_album_name || null;
                   rawRecords.push({
                     endTime: item.endTime || item.ts,
                     artistName: item.artistName || item.master_metadata_album_artist_name,
                     trackName: item.trackName || item.master_metadata_track_name,
+                    albumName: album,
                     msPlayed: item.msPlayed != null ? item.msPlayed : item.ms_played,
                   });
                 }
@@ -207,6 +212,12 @@ function render() {
     valPlays.textContent = '0';
     artistsTableBody.innerHTML = '<tr><td colspan="4" style="text-align:center; padding: 20px;">No streams found.</td></tr>';
     tracksTableBody.innerHTML = '<tr><td colspan="4" style="text-align:center; padding: 20px;">No streams found.</td></tr>';
+    if (albumsTableBody) {
+      albumsTableBody.innerHTML = '<tr><td colspan="4" style="text-align:center; padding: 20px;">No streams found.</td></tr>';
+    }
+    if (albumsPanel) {
+      albumsPanel.classList.add('hidden');
+    }
     return;
   }
 
@@ -216,6 +227,7 @@ function render() {
 
   const artistMap = new Map(); // artist -> { plays, duration }
   const trackMap = new Map();  // "track — artist" -> { name, plays, duration }
+  const albumMap = new Map();  // "album — artist" -> { name, plays, duration }
 
   let totalPlays = 0;
   let totalDurationMs = 0;
@@ -229,6 +241,7 @@ function render() {
 
     const artist = item.artistName;
     const track = item.trackName;
+    const album = item.albumName;
     const ms = item.msPlayed || 0;
 
     totalPlays += 1;
@@ -250,6 +263,17 @@ function render() {
     const tData = trackMap.get(trackKey);
     tData.plays += 1;
     tData.duration += ms;
+
+    // Aggregate Album (if album metadata is present)
+    if (album) {
+      const albumKey = `${album} — ${artist}`;
+      if (!albumMap.has(albumKey)) {
+        albumMap.set(albumKey, { name: albumKey, plays: 0, duration: 0 });
+      }
+      const alData = albumMap.get(albumKey);
+      alData.plays += 1;
+      alData.duration += ms;
+    }
   }
 
   // Update Active Date Range Banner
@@ -288,6 +312,9 @@ function render() {
   const sortLabel = activeSort === 'plays' ? 'Sorted by Plays' : 'Sorted by Duration';
   artistsSortTag.textContent = sortLabel;
   tracksSortTag.textContent = sortLabel;
+  if (albumsSortTag) {
+    albumsSortTag.textContent = sortLabel;
+  }
 
   // Render Artists Table
   artistsTableBody.innerHTML = topArtists
@@ -320,6 +347,37 @@ function render() {
       `;
     })
     .join('');
+
+  // Render Albums Table (Top 10 - only shown if albumName is present in rawRecords)
+  const hasAlbums = rawRecords.some((r) => r.albumName != null && String(r.albumName).trim() !== '');
+
+  if (albumsPanel) {
+    if (!hasAlbums || albumMap.size === 0) {
+      albumsPanel.classList.add('hidden');
+    } else {
+      albumsPanel.classList.remove('hidden');
+
+      const topAlbums = Array.from(albumMap.values())
+        .sort(sortComparator)
+        .slice(0, 10);
+
+      albumsTableBody.innerHTML = topAlbums
+        .map((item, index) => {
+          const rank = index + 1;
+          const rankClass = rank <= 3 ? `rank-top-${rank}` : '';
+          const minutes = Math.max(1, Math.round(item.duration / 60000));
+          return `
+            <tr>
+              <td class="col-rank"><span class="rank-badge ${rankClass}">${rank}</span></td>
+              <td class="col-name">${escapeHtml(item.name)}</td>
+              <td class="col-plays">${item.plays.toLocaleString()}</td>
+              <td class="col-duration">${minutes.toLocaleString()} min</td>
+            </tr>
+          `;
+        })
+        .join('');
+    }
+  }
 }
 
 function escapeHtml(str) {

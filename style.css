@@ -384,6 +384,10 @@ body {
   }
 }
 
+#albumsPanel {
+  grid-column: 1;
+}
+
 .ranking-panel {
   background-color: var(--bg-card);
   border: 1px solid var(--border-color);

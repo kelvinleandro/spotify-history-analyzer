@@ -219,6 +219,29 @@
             </table>
           </div>
         </div>
+
+        <!-- Top Albums (Shown only if album metadata is present) -->
+        <div class="ranking-panel hidden" id="albumsPanel">
+          <div class="panel-header">
+            <h2>💿 Top 10 Albums</h2>
+            <span class="panel-tag" id="albumsSortTag">Sorted by Minutes</span>
+          </div>
+          <div class="table-container">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th class="col-rank">#</th>
+                  <th class="col-name">Album</th>
+                  <th class="col-plays">Plays</th>
+                  <th class="col-duration">Minutes</th>
+                </tr>
+              </thead>
+              <tbody id="albumsTableBody">
+                <!-- Rows injected via JS -->
+              </tbody>
+            </table>
+          </div>
+        </div>
       </section>
 
       <!-- Footer Notice -->
