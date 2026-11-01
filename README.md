@@ -8,7 +8,7 @@ Built with pure **HTML5**, **CSS3**, and **Vanilla JavaScript** — runs 100% lo
 
 ## 🚀 Features
 
-- **Client-Side ZIP Parsing**: Direct upload and client-side decompression of your `.zip` archive via [JSZip](https://stuk.github.io/jszip/). Your data never leaves your computer.
+- **Client-Side ZIP Parsing**: Direct upload and client-side decompression of your `.zip` archive via [JSZip](https://stuk.github.io/jszip/). Supports both standard account data and extended streaming history files. Your data never leaves your computer.
 - **Date Range Overview**: Automatically detects and displays the earliest and latest streaming dates for the active analysis window.
 - **Year Filter Selector**: Select any available year detected in your streaming history, or choose "All Time" to analyze your complete history.
 - **Instant Metrics Cards**:
@@ -16,10 +16,18 @@ Built with pure **HTML5**, **CSS3**, and **Vanilla JavaScript** — runs 100% lo
   - 🎤 **Unique Artists**: Total number of distinct artists discovered.
   - ⏱️ **Total Hours Listened**: Formatted total listening duration.
   - ▶️ **Total Plays**: Valid stream count.
-- **Top 50 Rankings (Split Screen)**:
-  - Side-by-side view of **Top 50 Artists** and **Top 50 Tracks**.
-  - Displays Rank badge (with gold/silver/bronze highlights for Top 3), Name, Plays, and Duration.
-- **Dynamic Sorting**: Switch seamlessly between sorting by **Plays** or **Duration** without re-reading the file.
+- **Monthly Listening Time Bar Chart**:
+  - When filtering by a specific year, displays an interactive vertical bar chart of total minutes listened per month (Jan to Dec).
+  - Displays formatted minutes above each bar, yearly total badge, and detailed tooltips on hover.
+- **Listening Habits Heatmap (7 × 24 Grid)**:
+  - Visual activity heatmap displaying listening time distribution across all 7 days of the week and 24 hours of the day.
+  - Automatically converts Spotify's UTC timestamps into your local browser timezone.
+  - Identifies peak listening times and features hover/touch inspection for any hour of the week.
+- **Rankings & Leaders Grid**:
+  - 🎤 **Top 50 Artists** & 🎶 **Top 50 Tracks**: Side-by-side rankings with rank badges (gold/silver/bronze for Top 3), total plays, and listening duration.
+  - 👑 **Top Artist & 🎵 Top Track by Month**: Year-specific tables showcasing your #1 artist and #1 song for each month.
+  - 💿 **Top 10 Albums (Conditional)**: Automatically appears when album metadata is present in your data export (Extended Streaming History), showing your top albums in minutes and plays.
+- **Dynamic Global Sorting**: Switch seamlessly between sorting by **Plays** or **Duration** across all rankings with a single toggle.
 - **30-Second Rule Compliance**: In accordance with Spotify's official playback metrics, only streams with playback duration of at least 30 seconds ($\ge 30,000$ ms) are counted as a valid play.
 
 ---
@@ -38,7 +46,7 @@ Simply **double-click** on **[`index.html`](./index.html)** or open it in any mo
 
 1. Go to your [Spotify Account Privacy Settings](https://www.spotify.com/account/privacy/).
 2. Scroll down to the **Download your data** section.
-3. Request your **Account Data** (Streaming History).
+3. Request your **Account Data** or **Extended Streaming History** (Extended history includes album metadata and full lifetime listening history).
 4. Once Spotify sends you the confirmation email, download the `.zip` archive.
 5. Drag and drop the downloaded `.zip` file directly into the application!
 
