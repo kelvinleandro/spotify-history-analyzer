@@ -545,6 +545,28 @@ body {
   flex-shrink: 0;
 }
 
+/* App Global Footer */
+.app-footer {
+  margin-top: 40px;
+  padding-top: 20px;
+  text-align: center;
+  font-size: 0.9rem;
+  color: var(--text-muted);
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.creator-link {
+  color: var(--text-secondary);
+  text-decoration: none;
+  font-weight: 600;
+  transition: color 0.2s ease;
+}
+
+.creator-link:hover {
+  color: var(--accent-green);
+  text-decoration: underline;
+}
+
 /* Instructions / How to get data section */
 .instructions-section {
   margin-top: 24px;
