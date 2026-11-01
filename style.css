@@ -47,9 +47,17 @@ body {
 }
 
 .brand {
-  display: flex;
+  display: inline-flex;
   align-items: center;
   gap: 16px;
+  text-decoration: none;
+  color: inherit;
+  cursor: pointer;
+  transition: opacity 0.2s ease;
+}
+
+.brand:hover {
+  opacity: 0.85;
 }
 
 .spotify-logo {
@@ -659,6 +667,7 @@ body {
   }
 }
 
+#monthlyArtistsPanel,
 #albumsPanel {
   grid-column: 1;
 }
@@ -751,6 +760,15 @@ body {
   text-align: center;
   color: var(--text-muted);
   font-weight: 700;
+}
+
+.col-month {
+  width: 75px;
+  font-weight: 700;
+  color: var(--accent-green);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-size: 0.8rem;
 }
 
 .col-name {

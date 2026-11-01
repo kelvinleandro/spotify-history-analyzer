@@ -24,13 +24,13 @@
   <div class="app-container">
     <!-- Header -->
     <header class="header">
-      <div class="brand">
+      <a href="./" class="brand" title="Reset and return to home">
         <img src="Spotify_Primary_Logo_RGB_Green.png" alt="Spotify Logo" class="spotify-logo">
         <div>
           <h1>Spotify Streaming History Analyzer</h1>
           <p class="subtitle">Client-side analysis of your Spotify listening data (zero server uploads)</p>
         </div>
-      </div>
+      </a>
     </header>
 
     <!-- Upload Zone -->
@@ -271,6 +271,52 @@
               </thead>
               <tbody id="tracksTableBody">
                 <!-- Rows injected via JS -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Top Artist per Month (Shown only when a specific year is selected) -->
+        <div class="ranking-panel hidden" id="monthlyArtistsPanel">
+          <div class="panel-header">
+            <h2>👑 Top Artist by Month</h2>
+            <span class="panel-tag" id="monthlyArtistsSortTag">Sorted by Plays</span>
+          </div>
+          <div class="table-container">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th class="col-month">Month</th>
+                  <th class="col-name">Artist</th>
+                  <th class="col-plays">Plays</th>
+                  <th class="col-duration">Duration</th>
+                </tr>
+              </thead>
+              <tbody id="monthlyArtistsTableBody">
+                <!-- Injected via JS -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Top Track per Month (Shown only when a specific year is selected) -->
+        <div class="ranking-panel hidden" id="monthlyTracksPanel">
+          <div class="panel-header">
+            <h2>🎵 Top Track by Month</h2>
+            <span class="panel-tag" id="monthlyTracksSortTag">Sorted by Plays</span>
+          </div>
+          <div class="table-container">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th class="col-month">Month</th>
+                  <th class="col-name">Track</th>
+                  <th class="col-plays">Plays</th>
+                  <th class="col-duration">Duration</th>
+                </tr>
+              </thead>
+              <tbody id="monthlyTracksTableBody">
+                <!-- Injected via JS -->
               </tbody>
             </table>
           </div>

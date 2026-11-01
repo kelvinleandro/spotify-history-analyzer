@@ -35,6 +35,13 @@ const monthlyChartContainer = document.getElementById('monthlyChartContainer');
 const chartTitle = document.getElementById('chartTitle');
 const chartYearTotal = document.getElementById('chartYearTotal');
 
+const monthlyArtistsPanel = document.getElementById('monthlyArtistsPanel');
+const monthlyTracksPanel = document.getElementById('monthlyTracksPanel');
+const monthlyArtistsTableBody = document.getElementById('monthlyArtistsTableBody');
+const monthlyTracksTableBody = document.getElementById('monthlyTracksTableBody');
+const monthlyArtistsSortTag = document.getElementById('monthlyArtistsSortTag');
+const monthlyTracksSortTag = document.getElementById('monthlyTracksSortTag');
+
 const heatmapSection = document.getElementById('heatmapSection');
 const heatmapGrid = document.getElementById('heatmapGrid');
 const heatmapPeakTag = document.getElementById('heatmapPeakTag');
@@ -77,6 +84,15 @@ function parseRecordDate(dateStr) {
   }
   const d = new Date(iso);
   return isNaN(d.getTime()) ? null : d;
+}
+
+// Reload application when clicking brand header
+const brandLink = document.querySelector('.brand');
+if (brandLink) {
+  brandLink.addEventListener('click', (e) => {
+    e.preventDefault();
+    window.location.reload();
+  });
 }
 
 // Drag & Drop Handlers
@@ -253,6 +269,12 @@ function render() {
     if (monthlyChartSection) {
       monthlyChartSection.classList.add('hidden');
     }
+    if (monthlyArtistsPanel) {
+      monthlyArtistsPanel.classList.add('hidden');
+    }
+    if (monthlyTracksPanel) {
+      monthlyTracksPanel.classList.add('hidden');
+    }
     if (heatmapGrid) {
       heatmapGrid.innerHTML = '';
     }
@@ -281,6 +303,8 @@ function render() {
   const trackMap = new Map();  // "track — artist" -> { name, plays, duration }
   const albumMap = new Map();  // "album — artist" -> { name, plays, duration }
   const monthlyMs = new Array(12).fill(0);
+  const monthlyArtists = Array.from({ length: 12 }, () => new Map());
+  const monthlyTracks = Array.from({ length: 12 }, () => new Map());
   const heatmapMatrix = Array.from({ length: 7 }, () =>
     Array.from({ length: 24 }, () => ({ ms: 0, plays: 0 }))
   );
@@ -331,11 +355,30 @@ function render() {
       alData.duration += ms;
     }
 
-    // Aggregate Monthly Duration (when a specific year is selected)
+    // Aggregate Monthly Duration & Leaders (when a specific year is selected)
     if (selectedYear !== 'all' && end && end.length >= 7) {
       const monthIdx = parseInt(end.slice(5, 7), 10) - 1;
       if (monthIdx >= 0 && monthIdx < 12) {
         monthlyMs[monthIdx] += ms;
+
+        // Monthly Artists
+        const mArtists = monthlyArtists[monthIdx];
+        if (!mArtists.has(artist)) {
+          mArtists.set(artist, { name: artist, plays: 0, duration: 0 });
+        }
+        const aData = mArtists.get(artist);
+        aData.plays += 1;
+        aData.duration += ms;
+
+        // Monthly Tracks
+        const trackKey = `${track} — ${artist}`;
+        const mTracks = monthlyTracks[monthIdx];
+        if (!mTracks.has(trackKey)) {
+          mTracks.set(trackKey, { name: trackKey, trackName: track, artistName: artist, plays: 0, duration: 0 });
+        }
+        const tData = mTracks.get(trackKey);
+        tData.plays += 1;
+        tData.duration += ms;
       }
     }
 
@@ -490,6 +533,79 @@ function render() {
   tracksSortTag.textContent = sortLabel;
   if (albumsSortTag) {
     albumsSortTag.textContent = sortLabel;
+  }
+  if (monthlyArtistsSortTag) {
+    monthlyArtistsSortTag.textContent = sortLabel;
+  }
+  if (monthlyTracksSortTag) {
+    monthlyTracksSortTag.textContent = sortLabel;
+  }
+
+  // Render Monthly Leaders Tables (only when a specific year is selected)
+  if (selectedYear === 'all') {
+    if (monthlyArtistsPanel) monthlyArtistsPanel.classList.add('hidden');
+    if (monthlyTracksPanel) monthlyTracksPanel.classList.add('hidden');
+  } else {
+    if (monthlyArtistsPanel) monthlyArtistsPanel.classList.remove('hidden');
+    if (monthlyTracksPanel) monthlyTracksPanel.classList.remove('hidden');
+
+    const MONTH_NAMES = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+    // Render Top Artist per Month
+    if (monthlyArtistsTableBody) {
+      monthlyArtistsTableBody.innerHTML = MONTH_NAMES
+        .map((mName, idx) => {
+          const list = Array.from(monthlyArtists[idx].values()).sort(sortComparator);
+          const top = list[0];
+          if (!top) {
+            return `
+              <tr>
+                <td class="col-month">${mName}</td>
+                <td class="col-name" style="color: var(--text-muted); font-style: italic;">—</td>
+                <td class="col-plays" style="color: var(--text-muted);">—</td>
+                <td class="col-duration" style="color: var(--text-muted);">—</td>
+              </tr>
+            `;
+          }
+          return `
+            <tr>
+              <td class="col-month">${mName}</td>
+              <td class="col-name">${escapeHtml(top.name)}</td>
+              <td class="col-plays">${top.plays.toLocaleString()}</td>
+              <td class="col-duration">${formatDuration(top.duration)}</td>
+            </tr>
+          `;
+        })
+        .join('');
+    }
+
+    // Render Top Track per Month
+    if (monthlyTracksTableBody) {
+      monthlyTracksTableBody.innerHTML = MONTH_NAMES
+        .map((mName, idx) => {
+          const list = Array.from(monthlyTracks[idx].values()).sort(sortComparator);
+          const top = list[0];
+          if (!top) {
+            return `
+              <tr>
+                <td class="col-month">${mName}</td>
+                <td class="col-name" style="color: var(--text-muted); font-style: italic;">—</td>
+                <td class="col-plays" style="color: var(--text-muted);">—</td>
+                <td class="col-duration" style="color: var(--text-muted);">—</td>
+              </tr>
+            `;
+          }
+          return `
+            <tr>
+              <td class="col-month">${mName}</td>
+              <td class="col-name">${escapeHtml(top.name)}</td>
+              <td class="col-plays">${top.plays.toLocaleString()}</td>
+              <td class="col-duration">${formatDuration(top.duration)}</td>
+            </tr>
+          `;
+        })
+        .join('');
+    }
   }
 
   // Render Artists Table
