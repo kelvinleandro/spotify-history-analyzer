@@ -35,6 +35,11 @@ const monthlyChartContainer = document.getElementById('monthlyChartContainer');
 const chartTitle = document.getElementById('chartTitle');
 const chartYearTotal = document.getElementById('chartYearTotal');
 
+const heatmapSection = document.getElementById('heatmapSection');
+const heatmapGrid = document.getElementById('heatmapGrid');
+const heatmapPeakTag = document.getElementById('heatmapPeakTag');
+const heatmapHoverInfo = document.getElementById('heatmapHoverInfo');
+
 // Duration Formatter
 function formatDuration(ms) {
   const totalSeconds = Math.floor(ms / 1000);
@@ -50,6 +55,28 @@ function formatDuration(ms) {
     return `${minutes}m ${String(remSeconds).padStart(2, '0')}s`;
   }
   return `${remSeconds}s`;
+}
+
+// Parse UTC Spotify timestamps into local Date objects
+function parseRecordDate(dateStr) {
+  if (!dateStr) return null;
+  let iso = String(dateStr).trim();
+  if (!iso.includes('T')) {
+    iso = iso.replace(' ', 'T');
+  }
+  const parts = iso.split('T');
+  if (parts.length === 2) {
+    let timePart = parts[1];
+    if (timePart.length === 5) {
+      timePart += ':00';
+    }
+    if (!timePart.endsWith('Z') && !timePart.includes('+') && !timePart.includes('-', 3)) {
+      timePart += 'Z';
+    }
+    iso = `${parts[0]}T${timePart}`;
+  }
+  const d = new Date(iso);
+  return isNaN(d.getTime()) ? null : d;
 }
 
 // Drag & Drop Handlers
@@ -226,8 +253,25 @@ function render() {
     if (monthlyChartSection) {
       monthlyChartSection.classList.add('hidden');
     }
+    if (heatmapGrid) {
+      heatmapGrid.innerHTML = '';
+    }
+    if (heatmapPeakTag) {
+      heatmapPeakTag.textContent = 'Peak: —';
+    }
     return;
   }
+
+  // Days of week config for heatmap (Mon - Sun)
+  const DAYS_CONFIG = [
+    { dayIndex: 1, name: 'Mon', full: 'Monday' },
+    { dayIndex: 2, name: 'Tue', full: 'Tuesday' },
+    { dayIndex: 3, name: 'Wed', full: 'Wednesday' },
+    { dayIndex: 4, name: 'Thu', full: 'Thursday' },
+    { dayIndex: 5, name: 'Fri', full: 'Friday' },
+    { dayIndex: 6, name: 'Sat', full: 'Saturday' },
+    { dayIndex: 0, name: 'Sun', full: 'Sunday' },
+  ];
 
   // Find date range
   let oldestDate = null;
@@ -237,6 +281,9 @@ function render() {
   const trackMap = new Map();  // "track — artist" -> { name, plays, duration }
   const albumMap = new Map();  // "album — artist" -> { name, plays, duration }
   const monthlyMs = new Array(12).fill(0);
+  const heatmapMatrix = Array.from({ length: 7 }, () =>
+    Array.from({ length: 24 }, () => ({ ms: 0, plays: 0 }))
+  );
 
   let totalPlays = 0;
   let totalDurationMs = 0;
@@ -289,6 +336,19 @@ function render() {
       const monthIdx = parseInt(end.slice(5, 7), 10) - 1;
       if (monthIdx >= 0 && monthIdx < 12) {
         monthlyMs[monthIdx] += ms;
+      }
+    }
+
+    // Aggregate Heatmap (Day of Week x Hour of Day)
+    if (end) {
+      const d = parseRecordDate(end);
+      if (d) {
+        const day = d.getDay();
+        const hour = d.getHours();
+        if (day >= 0 && day < 7 && hour >= 0 && hour < 24) {
+          heatmapMatrix[day][hour].ms += ms;
+          heatmapMatrix[day][hour].plays += 1;
+        }
       }
     }
   }
@@ -349,6 +409,64 @@ function render() {
           .join('');
       }
     }
+  }
+
+  // Render Heatmap (Days of Week vs Hours of Day)
+  if (heatmapGrid) {
+    let maxCellMinutes = 0;
+    let peakCell = null;
+
+    for (let d = 0; d < 7; d++) {
+      for (let h = 0; h < 24; h++) {
+        const cellMins = Math.round(heatmapMatrix[d][h].ms / 60000);
+        if (cellMins > maxCellMinutes) {
+          maxCellMinutes = cellMins;
+          peakCell = { dayIndex: d, hour: h, minutes: cellMins, plays: heatmapMatrix[d][h].plays };
+        }
+      }
+    }
+
+    if (heatmapPeakTag) {
+      if (peakCell && peakCell.minutes > 0) {
+        const dayObj = DAYS_CONFIG.find((item) => item.dayIndex === peakCell.dayIndex);
+        const dayLabel = dayObj ? dayObj.name : '';
+        heatmapPeakTag.textContent = `Peak: ${dayLabel} at ${String(peakCell.hour).padStart(2, '0')}:00 (${peakCell.minutes.toLocaleString()} min)`;
+      } else {
+        heatmapPeakTag.textContent = 'Peak: —';
+      }
+    }
+
+    let gridHtml = '';
+
+    // Header row: empty corner cell + 24 hour labels (00 to 23)
+    gridHtml += '<div class="heatmap-header-cell"></div>';
+    for (let h = 0; h < 24; h++) {
+      gridHtml += `<div class="heatmap-header-cell">${String(h).padStart(2, '0')}</div>`;
+    }
+
+    // 7 rows for days of the week
+    for (const day of DAYS_CONFIG) {
+      gridHtml += `<div class="heatmap-day-label">${day.name}</div>`;
+      for (let h = 0; h < 24; h++) {
+        const cellData = heatmapMatrix[day.dayIndex][h];
+        const minutes = Math.round(cellData.ms / 60000);
+        const plays = cellData.plays;
+
+        let bgStyle = 'background-color: rgba(255, 255, 255, 0.04);';
+        if (minutes > 0 && maxCellMinutes > 0) {
+          const ratio = minutes / maxCellMinutes;
+          const alpha = (0.20 + 0.80 * Math.pow(ratio, 0.65)).toFixed(2);
+          bgStyle = `background-color: rgba(29, 185, 84, ${alpha});`;
+        }
+
+        const hourRange = `${String(h).padStart(2, '0')}:00 - ${String(h).padStart(2, '0')}:59`;
+        const info = `${day.full} ${hourRange} • ${minutes.toLocaleString()} min (${plays.toLocaleString()} plays)`;
+
+        gridHtml += `<div class="heatmap-cell" style="${bgStyle}" data-info="${escapeHtml(info)}" title="${escapeHtml(info)}"></div>`;
+      }
+    }
+
+    heatmapGrid.innerHTML = gridHtml;
   }
 
   // Sort function helper
@@ -469,3 +587,26 @@ sortByDurationBtn.addEventListener('click', () => {
     render();
   }
 });
+
+// Heatmap Hover & Touch Interactions
+if (heatmapGrid) {
+  heatmapGrid.addEventListener('mouseover', (e) => {
+    const cell = e.target.closest('.heatmap-cell');
+    if (cell && cell.dataset.info && heatmapHoverInfo) {
+      heatmapHoverInfo.innerHTML = `<strong>${cell.dataset.info}</strong>`;
+    }
+  });
+
+  heatmapGrid.addEventListener('mouseleave', () => {
+    if (heatmapHoverInfo) {
+      heatmapHoverInfo.textContent = 'Hover or tap any cell to inspect details';
+    }
+  });
+
+  heatmapGrid.addEventListener('touchstart', (e) => {
+    const cell = e.target.closest('.heatmap-cell');
+    if (cell && cell.dataset.info && heatmapHoverInfo) {
+      heatmapHoverInfo.innerHTML = `<strong>${cell.dataset.info}</strong>`;
+    }
+  }, { passive: true });
+}
