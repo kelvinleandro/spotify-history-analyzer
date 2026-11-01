@@ -172,6 +172,25 @@
         </div>
       </section>
 
+      <!-- Monthly Listening Chart (Visible only when a specific year is selected) -->
+      <section class="monthly-chart-section hidden" id="monthlyChartSection">
+        <div class="chart-card">
+          <div class="chart-header">
+            <div class="chart-title-group">
+              <span class="chart-icon">📊</span>
+              <div>
+                <h2 id="chartTitle">Monthly Listening Time</h2>
+                <span class="chart-subtitle">Minutes listened per month</span>
+              </div>
+            </div>
+            <div class="chart-total-tag" id="chartYearTotal">0 min total</div>
+          </div>
+          <div class="chart-container" id="monthlyChartContainer">
+            <!-- Bars rendered via JavaScript -->
+          </div>
+        </div>
+      </section>
+
       <!-- Tables Section (Split screen 2 columns) -->
       <section class="rankings-grid">
         <!-- Top Artists -->

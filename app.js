@@ -30,6 +30,11 @@ const tracksTableBody = document.getElementById('tracksTableBody');
 const albumsPanel = document.getElementById('albumsPanel');
 const albumsTableBody = document.getElementById('albumsTableBody');
 
+const monthlyChartSection = document.getElementById('monthlyChartSection');
+const monthlyChartContainer = document.getElementById('monthlyChartContainer');
+const chartTitle = document.getElementById('chartTitle');
+const chartYearTotal = document.getElementById('chartYearTotal');
+
 // Duration Formatter
 function formatDuration(ms) {
   const totalSeconds = Math.floor(ms / 1000);
@@ -218,6 +223,9 @@ function render() {
     if (albumsPanel) {
       albumsPanel.classList.add('hidden');
     }
+    if (monthlyChartSection) {
+      monthlyChartSection.classList.add('hidden');
+    }
     return;
   }
 
@@ -228,6 +236,7 @@ function render() {
   const artistMap = new Map(); // artist -> { plays, duration }
   const trackMap = new Map();  // "track — artist" -> { name, plays, duration }
   const albumMap = new Map();  // "album — artist" -> { name, plays, duration }
+  const monthlyMs = new Array(12).fill(0);
 
   let totalPlays = 0;
   let totalDurationMs = 0;
@@ -274,6 +283,14 @@ function render() {
       alData.plays += 1;
       alData.duration += ms;
     }
+
+    // Aggregate Monthly Duration (when a specific year is selected)
+    if (selectedYear !== 'all' && end && end.length >= 7) {
+      const monthIdx = parseInt(end.slice(5, 7), 10) - 1;
+      if (monthIdx >= 0 && monthIdx < 12) {
+        monthlyMs[monthIdx] += ms;
+      }
+    }
   }
 
   // Update Active Date Range Banner
@@ -292,6 +309,47 @@ function render() {
   valArtists.textContent = artistMap.size.toLocaleString();
   valHours.textContent = `${Number(totalHours).toLocaleString()} hrs`;
   valPlays.textContent = totalPlays.toLocaleString();
+
+  // Render Monthly Listening Chart (only when a specific year is selected)
+  if (monthlyChartSection) {
+    if (selectedYear === 'all') {
+      monthlyChartSection.classList.add('hidden');
+    } else {
+      monthlyChartSection.classList.remove('hidden');
+      const MONTH_NAMES = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+      const monthlyMinutes = monthlyMs.map((ms) => Math.round(ms / 60000));
+      const totalYearMinutes = monthlyMinutes.reduce((sum, val) => sum + val, 0);
+      const maxMinutes = Math.max(...monthlyMinutes, 1);
+
+      if (chartTitle) {
+        chartTitle.textContent = `Monthly Listening Time (${selectedYear})`;
+      }
+      if (chartYearTotal) {
+        chartYearTotal.textContent = `${totalYearMinutes.toLocaleString()} min total`;
+      }
+
+      if (monthlyChartContainer) {
+        monthlyChartContainer.innerHTML = monthlyMinutes
+          .map((minutes, idx) => {
+            const monthName = MONTH_NAMES[idx];
+            const heightPercent = maxMinutes > 0 ? ((minutes / maxMinutes) * 100).toFixed(1) : 0;
+            const hours = (minutes / 60).toFixed(1);
+            const safeHeight = minutes > 0 ? Math.max(3, parseFloat(heightPercent)) : 0;
+
+            return `
+              <div class="chart-col" title="${monthName} ${selectedYear}: ${minutes.toLocaleString()} min (~${hours} hrs)">
+                <div class="chart-val-top">${minutes > 0 ? minutes.toLocaleString() + ' min' : '0 min'}</div>
+                <div class="chart-bar-track">
+                  <div class="chart-bar-fill" style="height: ${safeHeight}%;"></div>
+                </div>
+                <div class="chart-col-label">${monthName}</div>
+              </div>
+            `;
+          })
+          .join('');
+      }
+    }
+  }
 
   // Sort function helper
   const sortComparator = (a, b) => {
